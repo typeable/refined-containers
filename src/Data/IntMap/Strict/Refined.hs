@@ -236,8 +236,15 @@ zipWithKey
   -> IntMap s c
 zipWithKey f (IntMap m1) (IntMap m2) = IntMap
   $ IntMap.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
-    (error "zipWithKey: bug: Data.IntMap.Strict.Refined has been subverted")
-    (error "zipWithKey: bug: Data.IntMap.Strict.Refined has been subverted")
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else
+        error "zipWithKey: bug: Data.IntMap.Strict.Refined has been subverted")
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else
+        error "zipWithKey: bug: Data.IntMap.Strict.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
 

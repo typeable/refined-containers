@@ -241,8 +241,13 @@ zipWithKey
   => (Key s k -> a -> b -> c) -> Map s k a -> Map s k b -> Map s k c
 zipWithKey f (Map m1) (Map m2) = Map
   $ Map.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
-    (error "zipWithKey: bug: Data.Map.Refined has been subverted")
-    (error "zipWithKey: bug: Data.Map.Refined has been subverted")
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
 
