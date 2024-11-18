@@ -112,9 +112,9 @@ import           Unsafe.Coerce
 -- need to pattern match on this 'Dict'.
 --
 -- The reason is that in the default /fast/ implementation of reflection, we
--- don't have @'Typeable' s@, which "Refined" wants for pretty-printing
--- exceptions. We /can/ provide @'Typeable' s@, but at the cost of using the
--- /slow/ implementation of reflection.
+-- don't have @'Data.Typeable.Typeable' s@, which "Refined" wants for
+-- pretty-printing exceptions. We /can/ provide @'Data.Typeable.Typeable' s@,
+-- but at the cost of using the /slow/ implementation of reflection.
 revealPredicate
   :: forall s a. (Typeable a, Hashable a, KnownHashSet s a)
   => Dict (Predicate (InSet 'Hashed s) a)

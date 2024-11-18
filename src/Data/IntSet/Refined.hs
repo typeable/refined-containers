@@ -119,8 +119,8 @@ import qualified Data.List as List
 --
 -- The reason is that in the default /fast/ implementation of reflection, we
 -- don't have @'Data.Typeable.Typeable' s@, which "Refined" wants for
--- pretty-printing exceptions. We /can/ provide @'Data.TypeableTypeable' s@, but
--- at the cost of using the /slow/ implementation of reflection.
+-- pretty-printing exceptions. We /can/ provide @'Data.Typeable.Typeable' s@,
+-- but at the cost of using the /slow/ implementation of reflection.
 revealPredicate
   :: forall s. KnownIntSet s => Dict (Predicate (InSet 'Int s) Int)
 revealPredicate = reifyTypeable (reflect (Proxy @s))
