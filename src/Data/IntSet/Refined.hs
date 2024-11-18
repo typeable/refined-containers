@@ -103,7 +103,12 @@ import           Data.Traversable
 import           Data.Type.Coercion
 import           Data.Type.Equality ((:~:)(..))
 import           GHC.Exts (Proxy#, proxy#)
-import           Prelude hiding (filter, foldl, foldMap, foldr, map, null)
+import           Prelude hiding
+  ( filter, foldl, foldMap, foldr, map, null
+#if MIN_VERSION_base(4, 20, 0)
+  , foldl'
+#endif
+  )
 import           Refined
 import           Refined.Unsafe
 import           Unsafe.Coerce
