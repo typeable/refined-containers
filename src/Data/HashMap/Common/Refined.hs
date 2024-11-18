@@ -382,7 +382,7 @@ instance TraversableWithIndex (Key s k) (HashMap s k) where
   itraverse = traverseWithKey
 
 -- | Similar to the instance for functions -- zip corresponding keys. To use
--- '<*>'/'liftA2' without 'KnownSet' see 'zipWithKey'.
+-- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWithKey'.
 instance (Hashable k, KnownHashSet s k) => Applicative (HashMap s k) where
   pure x = fromSet \_ -> x
   (<*>) = zipWithKey (const id)
