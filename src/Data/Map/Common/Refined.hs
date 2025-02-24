@@ -23,6 +23,10 @@ import           Refined
 import           Refined.Unsafe
 import           Unsafe.Coerce
 
+#if MIN_VERSION_containers(0, 6, 3)
+import           Data.Bifoldable
+#endif
+
 #if MIN_VERSION_containers(0, 6, 2)
 #elif MIN_VERSION_containers(0, 5, 8)
 import           Data.Functor.Const (Const(..))
@@ -31,6 +35,10 @@ import qualified Data.Map.Merge.Lazy as Map
 #else
 import qualified Data.List as List
 import qualified Data.Map.Strict as MapStrict
+#endif
+
+#if MIN_VERSION_containers(0, 5, 9) || MIN_VERSION_hashable(1, 4, 0)
+import           Data.Functor.Classes
 #endif
 
 
@@ -49,6 +57,12 @@ newtype Map s k a = Map (Map.Map k a)
   deriving newtype (Eq, Ord, Show, Functor, Foldable, NFData)
 #if MIN_VERSION_hashable(1, 3, 4)
   deriving newtype (Hashable.Hashable)
+#endif
+#if MIN_VERSION_containers(0, 6, 3)
+  deriving newtype (Bifoldable)
+#endif
+#if MIN_VERSION_containers(0, 5, 9) || MIN_VERSION_hashable(1, 4, 0)
+  deriving newtype (Eq1, Eq2, Ord1, Ord2, Show1, Show2)
 #endif
   deriving stock (Traversable)
 type role Map nominal nominal representational

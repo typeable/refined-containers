@@ -36,6 +36,9 @@ import qualified Data.IntMap.Strict as IntMapStrict
 import qualified Data.List as List
 #endif
 
+#if MIN_VERSION_containers(0, 5, 9) || MIN_VERSION_hashable(1, 4, 0)
+import           Data.Functor.Classes
+#endif
 
 -- | A wrapper around a regular 'Data.IntMap.IntMap' with a type parameter @s@
 -- identifying the set of keys present in the map.
@@ -51,6 +54,9 @@ newtype IntMap s a = IntMap (IntMap.IntMap a)
   deriving newtype (Eq, Ord, Show, Functor, Foldable, NFData)
 #if MIN_VERSION_hashable(1, 3, 4)
   deriving newtype (Hashable.Hashable)
+#endif
+#if MIN_VERSION_containers(0, 5, 9) || MIN_VERSION_hashable(1, 4, 0)
+  deriving newtype (Eq1, Ord1, Show1)
 #endif
   deriving stock (Traversable)
 type role IntMap nominal representational

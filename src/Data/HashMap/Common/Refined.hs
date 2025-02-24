@@ -4,6 +4,7 @@ module Data.HashMap.Common.Refined where
 
 import           Control.Monad.Reader
 import           Control.DeepSeq
+import           Data.Bifoldable
 import           Data.Coerce
 import           Data.Constraint (Dict(..))
 import           Data.Container.Refined.Hashable
@@ -11,6 +12,7 @@ import           Data.Container.Refined.Proofs
 import           Data.Container.Refined.Unsafe
 import           Data.Distributive
 import           Data.Foldable.WithIndex
+import           Data.Functor.Classes
 import           Data.Functor.Rep
 import           Data.Functor.WithIndex
 import qualified Data.Hashable as Hashable
@@ -44,7 +46,10 @@ import           Data.Monoid (All(..))
 -- always derive @'KnownHashSet' s k@ by pattern matching on the 'Dict' returned
 -- by 'keysSet'.
 newtype HashMap s k a = HashMap (HashMap.HashMap k a)
-  deriving newtype (Eq, Ord, Show, Functor, Foldable, Hashable.Hashable, NFData)
+  deriving newtype
+    ( Eq, Eq1, Eq2, Ord, Ord1, Ord2, Show, Show1, Show2
+    , Functor, Foldable, Bifoldable, Hashable.Hashable, NFData
+    )
   deriving stock (Traversable)
 type role HashMap nominal nominal representational
 
