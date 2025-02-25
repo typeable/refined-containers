@@ -27,6 +27,7 @@ version: 0.1.0.2
 build-type: Simple
 
 tested-with:
+    , GHC == 9.12.1
     , GHC == 9.10.1
     , GHC == 9.8.2
     , GHC == 9.6.6
@@ -42,7 +43,7 @@ source-repository head
 
 library
     build-depends:
-        , base >= 4.12 && < 4.21
+        , base >= 4.12 && < 4.22
         , adjunctions >= 4.4 && < 4.5
         , constraints >= 0.11 && < 0.15
         , containers >= 0.5.7 && < 0.8
