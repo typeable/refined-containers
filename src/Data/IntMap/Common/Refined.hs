@@ -14,6 +14,7 @@ import           Data.Functor.Rep
 import           Data.Functor.WithIndex
 import qualified Data.Hashable as Hashable
 import qualified Data.IntMap as IntMap
+import qualified Data.IntSet as IntSet
 import           Data.Proxy
 import           Data.Reflection
 import           Data.Traversable.WithIndex
@@ -110,6 +111,14 @@ withIntMap (SomeIntMap m) k = k m
 -- | Construct a map from a regular 'Data.IntMap.IntMap'.
 fromIntMap :: forall a. IntMap.IntMap a -> SomeIntMap a
 fromIntMap m = SomeIntMap (IntMap m)
+
+-- | Given a set of keys @s@ known ahead of time, verify whether a regular
+-- 'Data.IntMap.IntMap' has exactly that set of keys.
+verifyIntMap
+  :: forall s a. KnownIntSet s => IntMap.IntMap a -> Maybe (IntMap s a)
+verifyIntMap m
+  | IntMap.keys m == IntSet.toList (reflect $ Proxy @s) = Just (IntMap m)
+  | otherwise = Nothing
 
 -- | An existential wrapper for an 'IntMap' with an as-yet-unknown set of keys,
 -- together with a proof of some fact @p@ about the set. Pattern matching on it

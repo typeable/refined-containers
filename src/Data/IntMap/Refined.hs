@@ -34,6 +34,7 @@ module Data.IntMap.Refined
   , SingletonProof(..)
   , fromSet
   , Common.fromIntMap
+  , Common.verifyIntMap
   , fromTraversableWithKey
   , FromTraversableProof(..)
   -- * Insertion

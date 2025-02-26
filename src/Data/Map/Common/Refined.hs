@@ -16,6 +16,7 @@ import qualified Data.Hashable as Hashable
 import qualified Data.Map as Map
 import           Data.Proxy
 import           Data.Reflection
+import qualified Data.Set as Set
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
 import           Data.Type.Equality ((:~:)(..))
@@ -116,6 +117,14 @@ withMap (SomeMap m) k = k m
 -- | Construct a map from a regular 'Data.Map.Map'.
 fromMap :: forall k a. Map.Map k a -> SomeMap k a
 fromMap m = SomeMap (Map m)
+
+-- | Given a set of keys @s@ known ahead of time, verify whether a regular
+-- 'Data.Map.Map' has exactly that set of keys.
+verifyMap
+  :: forall s k a. (Eq k, KnownSet s k) => Map.Map k a -> Maybe (Map s k a)
+verifyMap m
+  | Map.keys m == Set.toList (reflect $ Proxy @s) = Just (Map m)
+  | otherwise = Nothing
 
 -- | An existential wrapper for a 'Map' with an as-yet-unknown set of keys,
 -- together with a proof of some fact @p@ about the set. Pattern matching on it

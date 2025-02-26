@@ -43,6 +43,7 @@ module Data.HashMap.Refined
   , SingletonProof(..)
   , fromSet
   , Common.fromHashMap
+  , Common.verifyHashMap
   , fromTraversableWithKey
   , FromTraversableProof(..)
   -- * Insertion

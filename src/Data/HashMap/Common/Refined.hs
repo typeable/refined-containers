@@ -105,6 +105,26 @@ withHashMap (SomeHashMap m) k = k m
 fromHashMap :: forall k a. HashMap.HashMap k a -> SomeHashMap k a
 fromHashMap m = SomeHashMap (HashMap m)
 
+-- | Given a set of keys @s@ known ahead of time, verify whether a regular
+-- 'Data.HashMap.Lazy.HashMap' has exactly that set of keys.
+verifyHashMap
+  :: forall s k a. (Hashable k, KnownHashSet s k)
+  => HashMap.HashMap k a -> Maybe (HashMap s k a)
+verifyHashMap m
+#if MIN_VERSION_unordered_containers(0, 2, 12)
+  | HashMap.isSubmapOfBy (\_ _ -> True) m (HashSet.toMap keys)
+  , HashMap.isSubmapOfBy (\_ _ -> True) (HashSet.toMap keys) m
+#else
+  | All True <- flip HashMap.foldMapWithKey m \k _
+    -> All $ k `HashSet.member` keys
+  , All True <- flip foldMap keys \k
+    -> All $ k `HashMap.member` m
+#endif
+  = Just (HashMap m)
+  | otherwise = Nothing
+  where
+    keys = reflect $ Proxy @s
+
 -- | An existential wrapper for a 'HashMap' with an as-yet-unknown set of keys,
 -- together with a proof of some fact @p@ about the set. Pattern matching on it
 -- gives you a way to refer to the set (the parameter @s@). Functions that
