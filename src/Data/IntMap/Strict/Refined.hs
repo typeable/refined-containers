@@ -41,6 +41,8 @@ module Data.IntMap.Strict.Refined
   , FromTraversableProof(..)
   -- * Insertion
   , insert
+  , insertWith
+  , insertWithKey
   , InsertProof(..)
   , reinsert
   , insertLookupWithKey
@@ -206,6 +208,33 @@ insert
   -> IntMap s a
   -> SomeIntMapWith (InsertProof 'Int Int s) a
 insert k v (IntMap m) = SomeIntMapWith (IntMap $ IntMap.insert k v m)
+  $ InsertProof (unsafeKey k) unsafeSubset
+
+-- | Insert a key-value pair into the map to obtain a potentially larger map,
+-- guaranteed to contain the given key. If the key was already present, the
+-- supplied function is used to combine the new value with the old (in that
+-- order).
+insertWith
+  :: forall s a. (a -> a -> a)
+  -> Int
+  -> a
+  -> IntMap s a
+  -> SomeIntMapWith (InsertProof 'Int Int s) a
+insertWith f k v (IntMap m) = SomeIntMapWith
+  (IntMap $ IntMap.insertWith f k v m)
+  $ InsertProof (unsafeKey k) unsafeSubset
+
+-- | Insert a key-value pair into the map to obtain a potentially larger map,
+-- guaranteed to contain the given key. Like 'insertWith', but the combining
+-- function has access to the key, which is guaranteed to be in the old map.
+insertWithKey
+  :: forall s a. (Key s -> a -> a -> a)
+  -> Int
+  -> a
+  -> IntMap s a
+  -> SomeIntMapWith (InsertProof 'Int Int s) a
+insertWithKey f k v (IntMap m) = SomeIntMapWith
+  (IntMap $ IntMap.insertWithKey (f . unsafeKey) k v m)
   $ InsertProof (unsafeKey k) unsafeSubset
 
 -- | Overwrite a key-value pair that is known to already be in the map. The set

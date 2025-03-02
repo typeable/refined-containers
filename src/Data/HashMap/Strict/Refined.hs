@@ -50,6 +50,8 @@ module Data.HashMap.Strict.Refined
   , FromTraversableProof(..)
   -- * Insertion
   , insert
+  , insertWith
+  , insertWithKey
   , InsertProof(..)
   , reinsert
   , insertLookupWithKey
@@ -204,6 +206,35 @@ insert
   :: forall s k a. Hashable k
   => k -> a -> HashMap s k a -> SomeHashMapWith (InsertProof 'Hashed k s) k a
 insert k v (HashMap m) = SomeHashMapWith (HashMap $ HashMap.insert k v m)
+  $ InsertProof (unsafeKey k) unsafeSubset
+
+-- | Insert a key-value pair into the map to obtain a potentially larger map,
+-- guaranteed to contain the given key. If the key was already present, the
+-- supplied function is used to combine the new value with the old (in that
+-- order).
+insertWith
+  :: forall s k a. Hashable k
+  => (a -> a -> a)
+  -> k
+  -> a
+  -> HashMap s k a
+  -> SomeHashMapWith (InsertProof 'Hashed k s) k a
+insertWith f k v (HashMap m) = SomeHashMapWith
+  (HashMap $ HashMap.insertWith f k v m)
+  $ InsertProof (unsafeKey k) unsafeSubset
+
+-- | Insert a key-value pair into the map to obtain a potentially larger map,
+-- guaranteed to contain the given key. Like 'insertWith', but the combining
+-- function has access to the key, which is guaranteed to be in the old map.
+insertWithKey
+  :: forall s k a. Hashable k
+  => (Key s k -> a -> a -> a)
+  -> k
+  -> a
+  -> HashMap s k a
+  -> SomeHashMapWith (InsertProof 'Hashed k s) k a
+insertWithKey f k v (HashMap m) = SomeHashMapWith
+  (HashMap $ HashMap.insertWith (f $ unsafeKey k) k v m)
   $ InsertProof (unsafeKey k) unsafeSubset
 
 -- | Overwrite a key-value pair that is known to already be in the map. The set
