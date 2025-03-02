@@ -35,6 +35,8 @@ module Data.IntMap.Strict.Refined
   , fromSet
   , Common.fromIntMap
   , Common.verifyIntMap
+  , fromTraversable
+  , fromTraversableWith
   , fromTraversableWithKey
   , FromTraversableProof(..)
   -- * Insertion
@@ -146,17 +148,52 @@ singleton k v = SomeIntMapWith (IntMap $ IntMap.singleton k v)
 fromSet :: forall s a. KnownIntSet s => (Key s -> a) -> IntMap s a
 fromSet f = IntMap $ IntMap.fromSet (f . unsafeKey) (reflect $ Proxy @s)
 
--- | Create a map from an arbitrary traversable of key-value pairs.
+-- | Create a map from an arbitrary traversable of key-value pairs. If a key is
+-- repeated, the retained value is the last one in traversal order. If you're
+-- looking for @fromList@, this is the function you want.
+fromTraversable
+  :: forall t a. Traversable t
+  => t (Int, a) -> SomeIntMapWith (FromTraversableProof 'Int t Int) a
+fromTraversable xs = SomeIntMapWith (IntMap m) $ FromTraversableProof proof
+  where
+    (m, proof) = mapAccumL
+      (\s (k, v) -> let !s' = IntMap.insert k v s in (s', unsafeKey k))
+      IntMap.empty
+      xs
+
+-- | Create a map from an arbitrary traversable of key-value pairs, with a
+-- function for combining values for repeated keys. The function is called as if
+-- by 'foldl1', but flipped:
+--
+-- @
+-- 'fromTraversableWith' f [(k, x1), (k, x2), (k, x3)]
+--   = 'singleton' k (f x3 (f x2 x1))
+-- @
+fromTraversableWith
+  :: forall t a. Traversable t
+  => (a -> a -> a)
+  -> t (Int, a)
+  -> SomeIntMapWith (FromTraversableProof 'Int t Int) a
+fromTraversableWith f xs
+  = SomeIntMapWith (IntMap m) $ FromTraversableProof proof
+  where
+    (m, proof) = mapAccumL
+      (\s (k, v) -> let !s' = IntMap.insertWith f k v s in (s', unsafeKey k))
+      IntMap.empty
+      xs
+
+-- | Create a map from an arbitrary traversable of key-value pairs. Like
+-- 'fromTraversableWith', but the combining function has access to the key.
 fromTraversableWithKey
   :: forall t a. Traversable t
   => (Int -> a -> a -> a)
   -> t (Int, a)
   -> SomeIntMapWith (FromTraversableProof 'Int t Int) a
-fromTraversableWithKey f xs = SomeIntMapWith (IntMap m)
-  $ FromTraversableProof proof
+fromTraversableWithKey f xs
+  = SomeIntMapWith (IntMap m) $ FromTraversableProof proof
   where
     (m, proof) = mapAccumL
-      (\s (k, v) -> (IntMap.insertWithKey f k v s, unsafeKey k))
+      (\s (k, v) -> let !s' = IntMap.insertWithKey f k v s in (s', unsafeKey k))
       IntMap.empty
       xs
 

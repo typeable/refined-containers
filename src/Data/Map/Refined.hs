@@ -44,6 +44,8 @@ module Data.Map.Refined
   , fromSet
   , Common.fromMap
   , Common.verifyMap
+  , fromTraversable
+  , fromTraversableWith
   , fromTraversableWithKey
   , FromTraversableProof(..)
   -- * Insertion
@@ -148,7 +150,41 @@ singleton :: forall k a. k -> a -> SomeMapWith (SingletonProof 'Regular k) k a
 singleton k v = SomeMapWith (Map $ Map.singleton k v)
   $ SingletonProof (unsafeKey k)
 
--- | Create a map from an arbitrary traversable of key-value pairs.
+-- | Create a map from an arbitrary traversable of key-value pairs. If a key is
+-- repeated, the retained value is the last one in traversal order. If you're
+-- looking for @fromList@, this is the function you want.
+fromTraversable
+  :: forall t k a. (Traversable t, Ord k)
+  => t (k, a) -> SomeMapWith (FromTraversableProof 'Regular t k) k a
+fromTraversable xs = SomeMapWith (Map m) $ FromTraversableProof proof
+  where
+    (m, proof) = mapAccumL
+      (\s (k, v) -> let !s' = Map.insert k v s in (s', unsafeKey k))
+      Map.empty
+      xs
+
+-- | Create a map from an arbitrary traversable of key-value pairs, with a
+-- function for combining values for repeated keys. The function is called as if
+-- by 'foldl1', but flipped:
+--
+-- @
+-- 'fromTraversableWith' f [(k, x1), (k, x2), (k, x3)]
+--   = 'singleton' k (f x3 (f x2 x1))
+-- @
+fromTraversableWith
+  :: forall t k a. (Traversable t, Ord k)
+  => (a -> a -> a)
+  -> t (k, a)
+  -> SomeMapWith (FromTraversableProof 'Regular t k) k a
+fromTraversableWith f xs = SomeMapWith (Map m) $ FromTraversableProof proof
+  where
+    (m, proof) = mapAccumL
+      (\s (k, v) -> let !s' = Map.insertWith f k v s in (s', unsafeKey k))
+      Map.empty
+      xs
+
+-- | Create a map from an arbitrary traversable of key-value pairs. Like
+-- 'fromTraversableWith', but the combining function has access to the key.
 fromTraversableWithKey
   :: forall t k a. (Traversable t, Ord k)
   => (k -> a -> a -> a)
