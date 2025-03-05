@@ -441,15 +441,15 @@ castKey
 castKey = castRefined
 
 -- | If keys can be interconverted (e.g. as proved by 'castKey'), then the maps
--- can be interconverted too. For example, 'zipWithKey' can be implemented via
--- 'Data.HashMap.Refined.intersectionWithKey' by proving that the set of keys
--- remains unchanged:
+-- can be interconverted too. For example, 'Data.HashMap.Refined.zipWithKey' can
+-- be implemented via 'Data.HashMap.Refined.intersectionWithKey' by proving that
+-- the set of keys remains unchanged:
 --
 -- @
--- 'zipWithKey'
+-- 'Data.HashMap.Refined.zipWithKey'
 --   :: forall s k a b c. 'Hashable' k
 --   => ('Key' s k -> a -> b -> c) -> 'HashMap' s k a -> 'HashMap' s k b -> 'HashMap' s k c
--- 'zipWithKey' f m1 m2
+-- 'Data.HashMap.Refined.zipWithKey' f m1 m2
 --   | v'SomeHashMapWith' @r m proof <- 'Data.HashMap.Refined.intersectionWithKey' (f . 'andLeft') m1 m2
 --   , v'IntersectionProof' p1 p2 <- proof
 --   , ( v'Coercion' :: t'Coercion' ('HashMap' r k c) ('HashMap' s k c))
@@ -474,7 +474,7 @@ instance TraversableWithIndex (Key s k) (HashMap s k) where
   itraverse = traverseWithKey
 
 -- | Similar to the instance for functions -- zip corresponding keys. To use
--- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWithKey'.
+-- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWith'.
 instance (Hashable k, KnownHashSet s k) => Applicative (HashMap s k) where
   pure x = fromSet \_ -> x
   (<*>) = zipWith id

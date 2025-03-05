@@ -561,17 +561,17 @@ castKey
 castKey = castRefined
 
 -- | If keys can be interconverted (e.g. as proved by 'castKey'), then the maps
--- can be interconverted too. For example, 'zipWithKey' can be implemented via
--- 'Data.IntMap.Refined.intersectionWithKey' by proving that the set of keys
--- remains unchanged:
+-- can be interconverted too. For example, 'Data.IntMap.Refined.zipWithKey' can
+-- be implemented via 'Data.IntMap.Refined.intersectionWithKey' by proving that
+-- the set of keys remains unchanged:
 --
 -- @
--- 'zipWithKey'
+-- 'Data.IntMap.Refined.zipWithKey'
 --   :: forall s a b c. ('Key' s -> a -> b -> c)
 --   -> 'IntMap' s a
 --   -> 'IntMap' s b
 --   -> 'IntMap' s c
--- 'zipWithKey' f m1 m2
+-- 'Data.IntMap.Refined.zipWithKey' f m1 m2
 --   | v'SomeIntMapWith' @r m proof <- 'Data.IntMap.Refined.intersectionWithKey' (f . 'andLeft') m1 m2
 --   , v'IntersectionProof' p1 p2 <- proof
 --   , ( v'Coercion' :: t'Coercion' ('IntMap' r c) ('IntMap' s c))
