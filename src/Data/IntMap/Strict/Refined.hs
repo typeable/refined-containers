@@ -86,10 +86,12 @@ module Data.IntMap.Strict.Refined
   , intersectionWithKey
   , IntersectionProof(..)
   -- * Traversal
+  , map
   , mapWithKey
   , traverseWithKey
   , mapAccumLWithKey
   , mapAccumRWithKey
+  , mapKeys
   , mapKeysWith
   , MapProof(..)
   , backpermuteKeys
@@ -143,7 +145,7 @@ import           Data.Proxy
 import           Data.Reflection
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null, zipWith)
+import           Prelude hiding (lookup, map, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -433,6 +435,10 @@ intersectionWithKey f (IntMap m1) (IntMap m2) = SomeIntMapWith
   (IntMap $ IntMap.intersectionWithKey (f . reallyUnsafeRefine) m1 m2)
   $ IntersectionProof unsafeSubset unsafeSubsetWith2
 
+-- | Apply a function to all values in a map. The set of keys remains the same.
+map :: forall s a b. (a -> b) -> IntMap s a -> IntMap s b
+map = coerce $ IntMap.map @a @b
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, that are proven to be in the map. The set of keys remains the same.
 mapWithKey :: forall s a b. (Key s -> a -> b) -> IntMap s a -> IntMap s b
@@ -465,6 +471,27 @@ mapAccumRWithKey
   -> (a, IntMap s c)
 mapAccumRWithKey = gcoerceWith (unsafeCastKey @s) $ coerce
   $ IntMap.mapAccumRWithKey @a @b @c
+
+-- | @'mapKeys' f m@ applies @f@ to each key of @m@ and collects the results
+-- into a new map. For keys that were mapped to the same new key, the value
+-- corresponding to the greatest of the original keys is retained.
+mapKeys
+  :: forall s a. (Key s -> Int)
+  -> IntMap s a
+  -> SomeIntMapWith (MapProof 'Int s Int Int) a
+mapKeys g (IntMap m)
+  = SomeIntMapWith (IntMap $ IntMap.mapKeys (g . unsafeKey) m)
+    $ MapProof (unsafeKey . g) \k2 ->
+      case IntMap.lookup (unrefine k2) backMap of
+        Nothing -> error
+          "mapKeys: bug: Data.IntMap.Strict.Refined has been subverted"
+        Just k1 -> k1
+  where
+    ~backMap = IntMap.fromList
+      [ (k2, unsafeKey k1)
+      | k1 <- IntMap.keys m
+      , let !k2 = g $ unsafeKey k1
+      ]
 
 -- | @'mapKeysWith' c f m@ applies @f@ to each key of @m@ and collects the
 -- results into a new map. For keys that were mapped to the same new key, @c@

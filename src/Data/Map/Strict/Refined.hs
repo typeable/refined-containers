@@ -94,10 +94,12 @@ module Data.Map.Strict.Refined
   , intersectionWithKey
   , IntersectionProof(..)
   -- * Traversal
+  , map
   , mapWithKey
   , traverseWithKey
   , mapAccumLWithKey
   , mapAccumRWithKey
+  , mapKeys
   , mapKeysWith
   , MapProof(..)
   , backpermuteKeys
@@ -151,7 +153,7 @@ import           Data.Proxy
 import           Data.Reflection
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, map, null)
 import           Refined
 import           Refined.Unsafe
 
@@ -439,6 +441,10 @@ intersectionWithKey f (Map m1) (Map m2)
   = SomeMapWith (Map $ Map.intersectionWithKey (f . reallyUnsafeRefine) m1 m2)
     $ IntersectionProof unsafeSubset unsafeSubsetWith2
 
+-- | Apply a function to all values in a map. The set of keys remains the same.
+map :: forall s k a b. (a -> b) -> Map s k a -> Map s k b
+map = coerce $ Map.map @a @b @k
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, that are proven to be in the map. The set of keys remains the same.
 mapWithKey :: forall s k a b. (Key s k -> a -> b) -> Map s k a -> Map s k b
@@ -471,6 +477,27 @@ mapAccumRWithKey
   -> (a, Map s k c)
 mapAccumRWithKey = gcoerceWith (unsafeCastKey @s @k) $ coerce
   $ Map.mapAccumRWithKey @a @k @b @c
+
+-- | @'mapKeys' f m@ applies @f@ to each key of @m@ and collects the results
+-- into a new map. For keys that were mapped to the same new key, the value
+-- corresponding to the greatest of the original keys is retained.
+mapKeys
+  :: forall s k1 k2 a. Ord k2
+  => (Key s k1 -> k2)
+  -> Map s k1 a
+  -> SomeMapWith (MapProof 'Regular s k1 k2) k2 a
+mapKeys g (Map m)
+  = SomeMapWith (Map $ Map.mapKeys (g . unsafeKey) m)
+    $ MapProof (unsafeKey . g) \k2 -> case Map.lookup (unrefine k2) backMap of
+      Nothing -> error
+        "mapKeys: bug: Data.Map.Strict.Refined has been subverted"
+      Just k1 -> k1
+  where
+    ~backMap = Map.fromList
+      [ (k2, unsafeKey k1)
+      | k1 <- Map.keys m
+      , let !k2 = g $ unsafeKey k1
+      ]
 
 -- | @'mapKeysWith' c f m@ applies @f@ to each key of @m@ and collects the
 -- results into a new map. For keys that were mapped to the same new key, @c@

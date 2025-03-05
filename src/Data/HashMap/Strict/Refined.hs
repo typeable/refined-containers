@@ -91,10 +91,12 @@ module Data.HashMap.Strict.Refined
   , intersectionWithKey
   , IntersectionProof(..)
   -- * Traversal
+  , map
   , mapWithKey
   , traverseWithKey
   , mapAccumLWithKey
   , mapAccumRWithKey
+  , mapKeys
   , mapKeysWith
   , MapProof(..)
   , backpermuteKeys
@@ -139,7 +141,7 @@ import           Data.Reflection
 import           Data.Traversable
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null, zipWith)
+import           Prelude hiding (lookup, map, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -434,6 +436,10 @@ intersectionWithKey f (HashMap m1) (HashMap m2) = SomeHashMapWith
   (HashMap $ HashMap.intersectionWithKey (f . reallyUnsafeRefine) m1 m2)
   $ IntersectionProof unsafeSubset unsafeSubsetWith2
 
+-- | Apply a function to all values in a map. The set of keys remains the same.
+map :: forall s k a b. (a -> b) -> HashMap s k a -> HashMap s k b
+map = coerce $ HashMap.map @a @b @k
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, that are proven to be in the map. The set of keys remains the same.
 mapWithKey
@@ -467,6 +473,29 @@ mapAccumRWithKey
   -> HashMap s k b
   -> (a, HashMap s k c)
 mapAccumRWithKey f = imapAccumR (flip f)
+
+-- | @'mapKeys' f m@ applies @f@ to each key of @m@ and collects the results
+-- into a new map. For keys that were mapped to the same new key, the value is
+-- picked in an unspecified way.
+mapKeys
+  :: forall s k1 k2 a. Hashable k2
+  => (Key s k1 -> k2)
+  -> HashMap s k1 a
+  -> SomeHashMapWith (MapProof 'Hashed s k1 k2) k2 a
+mapKeys g (HashMap m) = SomeHashMapWith
+  (HashMap $ HashMap.fromList
+    $ HashMap.foldrWithKey (\k x xs -> (g $ unsafeKey k, x) : xs) [] m)
+  $ MapProof (unsafeKey . g) \k2 ->
+    case HashMap.lookup (unrefine k2) backMap of
+      Nothing -> error
+        "mapKeys: bug: Data.HashMap.Strict.Refined has been subverted"
+      Just k1 -> k1
+  where
+    ~backMap = HashMap.fromList
+      [ (k2, unsafeKey k1)
+      | k1 <- HashMap.keys m
+      , let !k2 = g $ unsafeKey k1
+      ]
 
 -- | @'mapKeysWith' c f m@ applies @f@ to each key of @m@ and collects the
 -- results into a new map. For keys that were mapped to the same new key, @c@
