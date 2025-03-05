@@ -266,6 +266,19 @@ zipWithKey f (IntMap m1) (IntMap m2) = IntMap
     m1
     m2
 
+-- | Return the union of two maps. For keys that exist in both maps, the value
+-- is taken from the first map.
+--
+-- @
+-- 'union' = unionWith 'const'
+-- @
+union
+  :: forall s t a. IntMap s a
+  -> IntMap t a
+  -> SomeIntMapWith (UnionProof 'Int s t) a
+union (IntMap m1) (IntMap m2) = SomeIntMapWith (IntMap $ IntMap.union m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
+
 -- | Remove the keys that appear in the second map from the first map.
 difference
   :: forall s t a b. IntMap s a

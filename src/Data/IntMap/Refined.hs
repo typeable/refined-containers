@@ -71,6 +71,8 @@ module Data.IntMap.Refined
   -- * Combine
   , zipWithKey
   , bind
+  , Common.union
+  , unionWith
   , unionWithKey
   , UnionProof(..)
   , Common.difference
@@ -320,6 +322,17 @@ updateLookupWithKey f k (IntMap m)
   = case IntMap.updateLookupWithKey (f . unsafeKey) k m of
     (v', !m') -> ((unsafeKey k,) <$> v',)
       $ SomeIntMapWith (IntMap m') $ SupersetProof unsafeSubset
+
+-- | Return the union of two maps, with a given combining function for keys that
+-- exist in both maps simultaneously.
+unionWith
+  :: forall s t a. (a -> a -> a)
+  -> IntMap s a
+  -> IntMap t a
+  -> SomeIntMapWith (UnionProof 'Int s t) a
+unionWith f (IntMap m1) (IntMap m2) = SomeIntMapWith
+  (IntMap $ IntMap.unionWith f m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.

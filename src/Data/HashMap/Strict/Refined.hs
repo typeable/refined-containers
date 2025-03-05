@@ -76,6 +76,8 @@ module Data.HashMap.Strict.Refined
   -- * Combine
   , zipWithKey
   , bind
+  , Common.union
+  , unionWith
   , unionWithKey
   , UnionProof(..)
   , Common.difference
@@ -345,6 +347,18 @@ zipWithKey
   => (Key s k -> a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
 zipWithKey = gcoerceWith (unsafeCastKey @s @k) $ coerce
   $ HashMap.intersectionWithKey @k @a @b @c
+
+-- | Return the union of two maps, with a given combining function for keys that
+-- exist in both maps simultaneously.
+unionWith
+  :: forall s t k a. Hashable k
+  => (a -> a -> a)
+  -> HashMap s k a
+  -> HashMap t k a
+  -> SomeHashMapWith (UnionProof 'Hashed s t) k a
+unionWith f (HashMap m1) (HashMap m2) = SomeHashMapWith
+  (HashMap $ HashMap.unionWith f m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.

@@ -80,6 +80,8 @@ module Data.Map.Strict.Refined
   -- * Combine
   , zipWithKey
   , bind
+  , Common.union
+  , unionWith
   , unionWithKey
   , UnionProof(..)
   , Common.difference
@@ -355,6 +357,17 @@ zipWithKey f (Map m1) (Map m2) = Map
     --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
+
+-- | Return the union of two maps, with a given combining function for keys that
+-- exist in both maps simultaneously.
+unionWith
+  :: forall s t k a. Ord k
+  => (a -> a -> a)
+  -> Map s k a
+  -> Map t k a
+  -> SomeMapWith (UnionProof 'Regular s t) k a
+unionWith f (Map m1) (Map m2) = SomeMapWith (Map $ Map.unionWith f m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.

@@ -245,6 +245,21 @@ zipWithKey
 zipWithKey f (HashMap m1) (HashMap m2) = HashMap
   $ HashMap.intersectionWithKey (f . unsafeKey) m1 m2
 
+-- | Return the union of two maps. For keys that exist in both maps, the value
+-- is taken from the first map.
+--
+-- @
+-- 'union' = unionWith 'const'
+-- @
+union
+  :: forall s t k a. Hashable k
+  => HashMap s k a
+  -> HashMap t k a
+  -> SomeHashMapWith (UnionProof 'Hashed s t) k a
+union (HashMap m1) (HashMap m2) = SomeHashMapWith
+  (HashMap $ HashMap.union m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
+
 -- | Remove the keys that appear in the second map from the first map.
 difference
   :: forall s t k a b. Hashable k

@@ -71,6 +71,8 @@ module Data.IntMap.Strict.Refined
   -- * Combine
   , zipWithKey
   , bind
+  , Common.union
+  , unionWith
   , unionWithKey
   , UnionProof(..)
   , Common.difference
@@ -347,6 +349,17 @@ zipWithKey f (IntMap m1) (IntMap m2) = IntMap
     --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
+
+-- | Return the union of two maps, with a given combining function for keys that
+-- exist in both maps simultaneously.
+unionWith
+  :: forall s t a. (a -> a -> a)
+  -> IntMap s a
+  -> IntMap t a
+  -> SomeIntMapWith (UnionProof 'Int s t) a
+unionWith f (IntMap m1) (IntMap m2) = SomeIntMapWith
+  (IntMap $ IntMap.unionWith f m1 m2)
+  $ UnionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.
