@@ -20,6 +20,7 @@ import qualified Data.Set as Set
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
 import           Data.Type.Equality ((:~:)(..))
+import           Prelude hiding (zipWith)
 import           Refined
 import           Refined.Unsafe
 import           Unsafe.Coerce
@@ -259,17 +260,17 @@ disjoint (Map m1) (Map m2)
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
-zipWithKey
+zipWith
   :: forall s k a b c. Ord k
-  => (Key s k -> a -> b -> c) -> Map s k a -> Map s k b -> Map s k c
-zipWithKey f (Map m1) (Map m2) = Map
-  $ Map.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
+  => (a -> b -> c) -> Map s k a -> Map s k b -> Map s k c
+zipWith f (Map m1) (Map m2) = Map
+  $ Map.mergeWithKey (\_ x y -> Just $ f x y)
     (\m -> if Map.null m
       then Map.empty
-      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+      else error "zipWith: bug: Data.Map.Refined has been subverted")
     (\m -> if Map.null m
       then Map.empty
-      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+      else error "zipWith: bug: Data.Map.Refined has been subverted")
     --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
@@ -519,10 +520,10 @@ instance TraversableWithIndex (Key s k) (Map s k) where
   itraverse = traverseWithKey
 
 -- | Similar to the instance for functions -- zip corresponding keys. To use
--- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWithKey'.
+-- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWith'.
 instance (Ord k, KnownSet s k) => Applicative (Map s k) where
   pure x = fromSet \_ -> x
-  (<*>) = zipWithKey (const id)
+  (<*>) = zipWith id
 
 -- | @'bind' m f@ is a map that for each key @k :: 'Key' s k@, contains the
 -- value @f (m '!' k) '!' k@, similar to @'>>='@ for functions.
@@ -542,7 +543,7 @@ instance (Ord k, KnownSet s k) => MonadReader (Key s k) (Map s k) where
 
 -- | Append the values at the corresponding keys
 instance (Ord k, Semigroup a) => Semigroup (Map s k a) where
-  (<>) = zipWithKey (const (<>))
+  (<>) = zipWith (<>)
 
 instance (Ord k, KnownSet s k, Monoid a) => Monoid (Map s k a) where
   mempty = fromSet \_ -> mempty

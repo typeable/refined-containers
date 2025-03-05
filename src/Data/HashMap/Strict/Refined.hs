@@ -74,6 +74,7 @@ module Data.HashMap.Strict.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -129,7 +130,7 @@ import           Data.Functor
 import qualified Data.HashMap.Strict as HashMap
 import           Data.HashMap.Common.Refined
   ( HashMap(..), Key, unsafeCastKey, unsafeKey, SomeHashMapWith(..)
-  , Some2HashMapWith(..), (!)
+  , Some2HashMapWith(..), (!), zipWith
   )
 import qualified Data.HashMap.Common.Refined as Common
 import qualified Data.HashSet as HashSet
@@ -138,7 +139,7 @@ import           Data.Reflection
 import           Data.Traversable
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 

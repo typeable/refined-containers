@@ -69,6 +69,7 @@ module Data.IntMap.Strict.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -135,14 +136,14 @@ import           Data.Functor
 import qualified Data.IntMap.Strict as IntMap
 import           Data.IntMap.Common.Refined
   ( IntMap(..), Key, unsafeCastKey, unsafeKey, SomeIntMapWith(..)
-  , Some2IntMapWith(..), (!)
+  , Some2IntMapWith(..), (!), zipWith
   )
 import qualified Data.IntMap.Common.Refined as Common
 import           Data.Proxy
 import           Data.Reflection
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 

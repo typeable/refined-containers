@@ -24,6 +24,7 @@ import           Data.Reflection
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
 import           Data.Type.Equality ((:~:)(..))
+import           Prelude hiding (zipWith)
 import           Refined
 import           Refined.Unsafe
 import           Unsafe.Coerce
@@ -239,11 +240,10 @@ disjoint (HashMap m1) (HashMap m2)
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
-zipWithKey
+zipWith
   :: forall s k a b c. Hashable k
-  => (Key s k -> a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
-zipWithKey f (HashMap m1) (HashMap m2) = HashMap
-  $ HashMap.intersectionWithKey (f . unsafeKey) m1 m2
+  => (a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
+zipWith f (HashMap m1) (HashMap m2) = HashMap $ HashMap.intersectionWith f m1 m2
 
 -- | Return the union of two maps. For keys that exist in both maps, the value
 -- is taken from the first map.
@@ -439,7 +439,7 @@ instance TraversableWithIndex (Key s k) (HashMap s k) where
 -- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWithKey'.
 instance (Hashable k, KnownHashSet s k) => Applicative (HashMap s k) where
   pure x = fromSet \_ -> x
-  (<*>) = zipWithKey (const id)
+  (<*>) = zipWith id
 
 -- | @'bind' m f@ is a map that for each key @k :: 'Key' s k@, contains the
 -- value @f (m '!' k) '!' k@, similar to @'>>='@ for functions.
@@ -462,7 +462,7 @@ instance (Hashable k, KnownHashSet s k)
 
 -- | Append the values at the corresponding keys
 instance (Hashable k, Semigroup a) => Semigroup (HashMap s k a) where
-  (<>) = zipWithKey (const (<>))
+  (<>) = zipWith (<>)
 
 instance (Hashable k, KnownHashSet s k, Monoid a)
   => Monoid (HashMap s k a) where

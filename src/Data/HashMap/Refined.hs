@@ -74,6 +74,7 @@ module Data.HashMap.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -128,7 +129,7 @@ import           Data.Container.Refined.Unsafe
 import           Data.Functor
 import           Data.HashMap.Common.Refined
   ( HashMap(..), Key, unsafeCastKey, unsafeKey, SomeHashMapWith(..)
-  , Some2HashMapWith(..), fromSet, (!), zipWithKey, mapWithKey, traverseWithKey
+  , Some2HashMapWith(..), fromSet, (!), zipWith, mapWithKey, traverseWithKey
   , bind
   )
 import qualified Data.HashMap.Common.Refined as Common
@@ -136,7 +137,7 @@ import qualified Data.HashMap.Lazy as HashMap
 import           Data.Traversable
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -334,6 +335,14 @@ updateLookupWithKey f k (HashMap m) =
   , SomeHashMapWith (HashMap $ HashMap.update (f $ unsafeKey k) k m)
     $ SupersetProof unsafeSubset
   )
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values, to obtain a new map with the same keys.
+zipWithKey
+  :: forall s k a b c. Hashable k
+  => (Key s k -> a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
+zipWithKey f (HashMap m1) (HashMap m2) = HashMap
+  $ HashMap.intersectionWithKey (f . unsafeKey) m1 m2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.

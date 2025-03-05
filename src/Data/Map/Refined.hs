@@ -78,6 +78,7 @@ module Data.Map.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -144,12 +145,12 @@ import           Data.Functor
 import qualified Data.Map as Map
 import           Data.Map.Common.Refined
   ( Map(..), Key, unsafeCastKey, unsafeKey, SomeMapWith(..), Some2MapWith(..)
-  , fromSet, (!), zipWithKey, mapWithKey, traverseWithKey, bind
+  , fromSet, (!), zipWith, mapWithKey, traverseWithKey, bind
   )
 import qualified Data.Map.Common.Refined as Common
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -336,6 +337,23 @@ updateLookupWithKey f k (Map m)
   = case Map.updateLookupWithKey (f . unsafeKey) k m of
     (v', !m') -> ((unsafeKey k,) <$> v',)
       $ SomeMapWith (Map m') $ SupersetProof unsafeSubset
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values, to obtain a new map with the same keys.
+zipWithKey
+  :: forall s k a b c. Ord k
+  => (Key s k -> a -> b -> c) -> Map s k a -> Map s k b -> Map s k c
+zipWithKey f (Map m1) (Map m2) = Map
+  $ Map.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWithKey: bug: Data.Map.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
+    m1
+    m2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.

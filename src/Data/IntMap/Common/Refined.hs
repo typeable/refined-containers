@@ -20,6 +20,7 @@ import           Data.Reflection
 import           Data.Traversable.WithIndex
 import           Data.Type.Coercion
 import           Data.Type.Equality ((:~:)(..))
+import           Prelude hiding (zipWith)
 import           Refined
 import           Refined.Unsafe
 import           Unsafe.Coerce
@@ -249,19 +250,19 @@ disjoint (IntMap m1) (IntMap m2)
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
-zipWithKey
-  :: forall s a b c. (Key s -> a -> b -> c)
+zipWith
+  :: forall s a b c. (a -> b -> c)
   -> IntMap s a
   -> IntMap s b
   -> IntMap s c
-zipWithKey f (IntMap m1) (IntMap m2) = IntMap
-  $ IntMap.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
+zipWith f (IntMap m1) (IntMap m2) = IntMap
+  $ IntMap.mergeWithKey (\_ x y -> Just $ f x y)
     (\m -> if IntMap.null m
       then IntMap.empty
-      else error "zipWithKey: bug: Data.IntMap.Refined has been subverted")
+      else error "zipWith: bug: Data.IntMap.Refined has been subverted")
     (\m -> if IntMap.null m
       then IntMap.empty
-      else error "zipWithKey: bug: Data.IntMap.Refined has been subverted")
+      else error "zipWith: bug: Data.IntMap.Refined has been subverted")
     --  ^ Work around https://github.com/haskell/containers/issues/979
     m1
     m2
@@ -520,10 +521,10 @@ instance TraversableWithIndex (Key s) (IntMap s) where
   itraverse = traverseWithKey
 
 -- | Similar to the instance for functions -- zip corresponding keys. To use
--- '<*>'/'Control.Applicative.liftA2' without 'KnownIntSet' see 'zipWithKey'.
+-- '<*>'/'Control.Applicative.liftA2' without 'KnownIntSet' see 'zipWith'.
 instance  KnownIntSet s => Applicative (IntMap s) where
   pure x = fromSet \_ -> x
-  (<*>) = zipWithKey (const id)
+  (<*>) = zipWith id
 
 -- | @'bind' m f@ is a map that for each key @k :: 'Key' s@, contains the
 -- value @f (m '!' k) '!' k@, similar to @'>>='@ for functions.
@@ -543,7 +544,7 @@ instance KnownIntSet s => MonadReader (Key s) (IntMap s) where
 
 -- | Append the values at the corresponding keys
 instance Semigroup a => Semigroup (IntMap s a) where
-  (<>) = zipWithKey (const (<>))
+  (<>) = zipWith (<>)
 
 instance (KnownIntSet s, Monoid a) => Monoid (IntMap s a) where
   mempty = fromSet \_ -> mempty

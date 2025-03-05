@@ -69,6 +69,7 @@ module Data.IntMap.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -135,13 +136,13 @@ import           Data.Functor
 import qualified Data.IntMap as IntMap
 import           Data.IntMap.Common.Refined
   ( IntMap(..), Key, unsafeCastKey, unsafeKey, SomeIntMapWith(..)
-  , Some2IntMapWith(..), fromSet, (!), zipWithKey, mapWithKey, traverseWithKey
+  , Some2IntMapWith(..), fromSet, (!), zipWith, mapWithKey, traverseWithKey
   , bind
   )
 import qualified Data.IntMap.Common.Refined as Common
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, null)
+import           Prelude hiding (lookup, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -325,6 +326,25 @@ updateLookupWithKey f k (IntMap m)
   = case IntMap.updateLookupWithKey (f . unsafeKey) k m of
     (v', !m') -> ((unsafeKey k,) <$> v',)
       $ SomeIntMapWith (IntMap m') $ SupersetProof unsafeSubset
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values, to obtain a new map with the same keys.
+zipWithKey
+  :: forall s a b c. (Key s -> a -> b -> c)
+  -> IntMap s a
+  -> IntMap s b
+  -> IntMap s c
+zipWithKey f (IntMap m1) (IntMap m2) = IntMap
+  $ IntMap.mergeWithKey (\k x y -> Just $ f (unsafeKey k) x y)
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else error "zipWithKey: bug: Data.IntMap.Refined has been subverted")
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else error "zipWithKey: bug: Data.IntMap.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
+    m1
+    m2
 
 -- | Return the union of two maps, with a given combining function for keys that
 -- exist in both maps simultaneously.
