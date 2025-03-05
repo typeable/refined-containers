@@ -288,6 +288,19 @@ difference (IntMap m1) (IntMap m2) = SomeIntMapWith
   (IntMap $ IntMap.difference m1 m2)
   $ DifferenceProof unsafeSubset (\f g -> unsafeSubsetWith2 f g) unsafeSubset
 
+-- | Return the intersection of two maps, taking values from the first map.
+--
+-- @
+-- 'intersection' = intersectionWith 'const'
+-- @
+intersection
+  :: forall s t a b. IntMap s a
+  -> IntMap t b
+  -> SomeIntMapWith (IntersectionProof 'Int s t) a
+intersection (IntMap m1) (IntMap m2) = SomeIntMapWith
+  (IntMap $ IntMap.intersection m1 m2)
+  $ IntersectionProof unsafeSubset unsafeSubsetWith2
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, that are proven to be in the map. The set of keys remains the same.
 mapWithKey :: forall s a b. (Key s -> a -> b) -> IntMap s a -> IntMap s b

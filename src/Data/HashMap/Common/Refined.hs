@@ -270,6 +270,20 @@ difference (HashMap m1) (HashMap m2)
   = SomeHashMapWith (HashMap $ HashMap.difference m1 m2)
     $ DifferenceProof unsafeSubset (\f g -> unsafeSubsetWith2 f g) unsafeSubset
 
+-- | Return the intersection of two maps, taking values from the first map.
+--
+-- @
+-- 'intersection' = intersectionWith 'const'
+-- @
+intersection
+  :: forall s t k a b. Hashable k
+  => HashMap s k a
+  -> HashMap t k b
+  -> SomeHashMapWith (IntersectionProof 'Hashed s t) k a
+intersection (HashMap m1) (HashMap m2) = SomeHashMapWith
+  (HashMap $ HashMap.intersection m1 m2)
+  $ IntersectionProof unsafeSubset unsafeSubsetWith2
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, that are proven to be in the map. The set of keys remains the same.
 mapWithKey

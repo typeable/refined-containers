@@ -80,6 +80,8 @@ module Data.IntMap.Strict.Refined
   , differenceWith
   , differenceWithKey
   , PartialDifferenceProof(..)
+  , Common.intersection
+  , intersectionWith
   , intersectionWithKey
   , IntersectionProof(..)
   -- * Traversal
@@ -403,6 +405,16 @@ differenceWithKey
 differenceWithKey f (IntMap m1) (IntMap m2) = SomeIntMapWith
   (IntMap $ IntMap.differenceWithKey (f . reallyUnsafeRefine) m1 m2)
   $ PartialDifferenceProof unsafeSubset unsafeSubset
+
+-- | Return the intersection of two maps with the given combining function.
+intersectionWith
+  :: forall s t a b c. (a -> b -> c)
+  -> IntMap s a
+  -> IntMap t b
+  -> SomeIntMapWith (IntersectionProof 'Int s t) c
+intersectionWith f (IntMap m1) (IntMap m2) = SomeIntMapWith
+  (IntMap $ IntMap.intersectionWith f m1 m2)
+  $ IntersectionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the intersection of two maps with the given combining function.
 --

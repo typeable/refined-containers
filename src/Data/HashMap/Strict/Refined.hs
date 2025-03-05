@@ -85,6 +85,8 @@ module Data.HashMap.Strict.Refined
   , differenceWith
   , differenceWithKey
   , PartialDifferenceProof(..)
+  , Common.intersection
+  , intersectionWith
   , intersectionWithKey
   , IntersectionProof(..)
   -- * Traversal
@@ -405,6 +407,17 @@ differenceWithKey f (HashMap m1) (HashMap m2) = SomeHashMapWith
     m1
     (HashMap.mapWithKey (,) m2))
   $ PartialDifferenceProof unsafeSubset unsafeSubset
+
+-- | Return the intersection of two maps with the given combining function.
+intersectionWith
+  :: forall s t k a b c. Hashable k
+  => (a -> b -> c)
+  -> HashMap s k a
+  -> HashMap t k b
+  -> SomeHashMapWith (IntersectionProof 'Hashed s t) k c
+intersectionWith f (HashMap m1) (HashMap m2) = SomeHashMapWith
+  (HashMap $ HashMap.intersectionWith f m1 m2)
+  $ IntersectionProof unsafeSubset unsafeSubsetWith2
 
 -- | Return the intersection of two maps with the given combining function.
 --
