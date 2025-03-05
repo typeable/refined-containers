@@ -57,9 +57,12 @@ module Data.Map.Refined
   , insertLookupWithKey
   -- * Deletion/Update
   , Common.delete
+  , adjust'
   , adjust
   , adjustWithKey
+  , update'
   , update
+  , updateWithKey
   , updateLookupWithKey
   -- * Query
   , Common.lookup
@@ -238,6 +241,10 @@ insertWithKey f k v (Map m) = SomeMapWith
 
 -- | Overwrite a key-value pair that is known to already be in the map. The set
 -- of keys remains the same.
+--
+-- @
+-- 'reinsert' k v = 'adjust (const v) k'
+-- @
 reinsert
   :: forall s k a. Ord k
   => Key s k -> a -> Map s k a -> Map s k a
@@ -258,10 +265,15 @@ insertLookupWithKey f k v (Map m)
     (v', !m') -> ((unsafeKey k,) <$> v',)
       $ SomeMapWith (Map m') $ InsertProof (unsafeKey k) unsafeSubset
 
+-- | If the given key is in the map, update the value at that key using the
+-- given function. In any case, the set of keys remains the same.
+adjust' :: forall s k a. Ord k => (a -> a) -> k -> Map s k a -> Map s k a
+adjust' = coerce $ Map.adjust @k @a
+
 -- | Update the value at a specific key known the be in the map using the given
 -- function. The set of keys remains the same.
 adjust :: forall s k a. Ord k => (a -> a) -> Key s k -> Map s k a -> Map s k a
-adjust = gcoerceWith (unsafeCastKey @s @k) $ coerce $ Map.adjust @k @a
+adjust = gcoerceWith (unsafeCastKey @s @k) $ coerce $ adjust' @s @k @a
 
 -- | If the given key is in the map, update the associated value using the given
 -- function with a proof that the key was in the map; otherwise return the map
@@ -271,6 +283,17 @@ adjustWithKey
 adjustWithKey = gcoerceWith (unsafeCastKey @s @k) $ coerce
   $ Map.adjustWithKey @k @a
 
+-- | If a key is present in the map, update its value or delete it using the
+-- given function, returning a potentially smaller map.
+update'
+  :: forall s k a. Ord k
+  => (a -> Maybe a)
+  -> k
+  -> Map s k a
+  -> SomeMapWith (SupersetProof 'Regular s) k a
+update' f k (Map m) = SomeMapWith (Map $ Map.update f k m)
+  $ SupersetProof unsafeSubset
+
 -- | Update or delete a key known to be in the map using the given function,
 -- returning a potentially smaller map.
 update
@@ -279,7 +302,19 @@ update
   -> Key s k
   -> Map s k a
   -> SomeMapWith (SupersetProof 'Regular s) k a
-update f k (Map m) = SomeMapWith (Map $ Map.update f (unrefine k) m)
+update = gcoerceWith (unsafeCastKey @s @k) $ coerce $ update' @s @k @a
+
+-- | If a key is present in the map, update its value or delete it using the
+-- given function with a proof that the key was in the map, returning a
+-- potentially smaller map.
+updateWithKey
+  :: forall s k a. Ord k
+  => (Key s k -> a -> Maybe a)
+  -> k
+  -> Map s k a
+  -> SomeMapWith (SupersetProof 'Regular s) k a
+updateWithKey f k (Map m) = SomeMapWith
+  (Map $ Map.updateWithKey (f . unsafeKey) k m)
   $ SupersetProof unsafeSubset
 
 -- | If the given key is in the map, update or delete it using the given

@@ -48,9 +48,12 @@ module Data.IntMap.Strict.Refined
   , insertLookupWithKey
   -- * Deletion/Update
   , Common.delete
+  , adjust'
   , adjust
   , adjustWithKey
+  , update'
   , update
+  , updateWithKey
   , updateLookupWithKey
   -- * Query
   , Common.lookup
@@ -239,6 +242,10 @@ insertWithKey f k v (IntMap m) = SomeIntMapWith
 
 -- | Overwrite a key-value pair that is known to already be in the map. The set
 -- of keys remains the same.
+--
+-- @
+-- 'reinsert' k v = 'adjust (const v) k'
+-- @
 reinsert
   :: forall s a. Key s -> a -> IntMap s a -> IntMap s a
 reinsert = gcoerceWith (unsafeCastKey @s) $ coerce $ IntMap.insert @a
@@ -257,10 +264,15 @@ insertLookupWithKey f k v (IntMap m)
     (v', !m') -> ((unsafeKey k,) <$> v',)
       $ SomeIntMapWith (IntMap m') $ InsertProof (unsafeKey k) unsafeSubset
 
+-- | If the given key is in the map, update the value at that key using the
+-- given function. In any case, the set of keys remains the same.
+adjust' :: forall s a. (a -> a) -> Int -> IntMap s a -> IntMap s a
+adjust' = coerce $ IntMap.adjust @a
+
 -- | Update the value at a specific key known the be in the map using the given
 -- function. The set of keys remains the same.
 adjust :: forall s a. (a -> a) -> Key s -> IntMap s a -> IntMap s a
-adjust = gcoerceWith (unsafeCastKey @s) $ coerce $ IntMap.adjust @a
+adjust = gcoerceWith (unsafeCastKey @s) $ coerce $ adjust' @s @a
 
 -- | If the given key is in the map, update the associated value using the given
 -- function with a proof that the key was in the map; otherwise return the map
@@ -270,6 +282,16 @@ adjustWithKey
 adjustWithKey = gcoerceWith (unsafeCastKey @s) $ coerce
   $ IntMap.adjustWithKey @a
 
+-- | If a key is present in the map, update its value or delete it using the
+-- given function, returning a potentially smaller map.
+update'
+  :: forall s a. (a -> Maybe a)
+  -> Int
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+update' f k (IntMap m) = SomeIntMapWith (IntMap $ IntMap.update f k m)
+  $ SupersetProof unsafeSubset
+
 -- | Update or delete a key known to be in the map using the given function,
 -- returning a potentially smaller map.
 update
@@ -277,7 +299,18 @@ update
   -> Key s
   -> IntMap s a
   -> SomeIntMapWith (SupersetProof 'Int s) a
-update f k (IntMap m) = SomeIntMapWith (IntMap $ IntMap.update f (unrefine k) m)
+update = gcoerceWith (unsafeCastKey @s) $ coerce $ update' @s @a
+
+-- | If a key is present in the map, update its value or delete it using the
+-- given function with a proof that the key was in the map, returning a
+-- potentially smaller map.
+updateWithKey
+  :: forall s a. (Key s -> a -> Maybe a)
+  -> Int
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+updateWithKey f k (IntMap m) = SomeIntMapWith
+  (IntMap $ IntMap.updateWithKey (f . unsafeKey) k m)
   $ SupersetProof unsafeSubset
 
 -- | If the given key is in the map, update or delete it using the given

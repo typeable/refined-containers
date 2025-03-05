@@ -57,9 +57,12 @@ module Data.HashMap.Refined
   , insertLookupWithKey
   -- * Deletion/Update
   , Common.delete
+  , adjust'
   , adjust
   , adjustWithKey
+  , update'
   , update
+  , updateWithKey
   , updateLookupWithKey
   -- * Query
   , Common.lookup
@@ -252,12 +255,22 @@ insertLookupWithKey f k v (HashMap m) =
     $ InsertProof (unsafeKey k) unsafeSubset
   )
 
+-- | If the given key is in the map, update the value at that key using the
+-- given function. In any case, the set of keys remains the same.
+adjust'
+  :: forall s k a. Hashable k => (a -> a) -> k -> HashMap s k a -> HashMap s k a
+adjust' = coerce $ HashMap.adjust @k @a
+
 -- | Update the value at a specific key known the be in the map using the given
 -- function. The set of keys remains the same.
+--
+-- @
+-- 'reinsert' k v = 'adjust (const v) k'
+-- @
 adjust
   :: forall s k a. Hashable k
   => (a -> a) -> Key s k -> HashMap s k a -> HashMap s k a
-adjust = gcoerceWith (unsafeCastKey @s @k) $ coerce $ HashMap.adjust @k @a
+adjust = gcoerceWith (unsafeCastKey @s @k) $ coerce $ adjust' @s @k @a
 
 -- | If the given key is in the map, update the associated value using the given
 -- function with a proof that the key was in the map; otherwise return the map
@@ -267,6 +280,17 @@ adjustWithKey
   => (Key s k -> a -> a) -> k -> HashMap s k a -> HashMap s k a
 adjustWithKey f k (HashMap m) = HashMap $ HashMap.adjust (f $ unsafeKey k) k m
 
+-- | If a key is present in the map, update its value or delete it using the
+-- given function, returning a potentially smaller map.
+update'
+  :: forall s k a. Hashable k
+  => (a -> Maybe a)
+  -> k
+  -> HashMap s k a
+  -> SomeHashMapWith (SupersetProof 'Hashed s) k a
+update' f k (HashMap m) = SomeHashMapWith (HashMap $ HashMap.update f k m)
+  $ SupersetProof unsafeSubset
+
 -- | Update or delete a key known to be in the map using the given function,
 -- returning a potentially smaller map.
 update
@@ -275,9 +299,20 @@ update
   -> Key s k
   -> HashMap s k a
   -> SomeHashMapWith (SupersetProof 'Hashed s) k a
-update f k (HashMap m)
-  = SomeHashMapWith (HashMap $ HashMap.update f (unrefine k) m)
-    $ SupersetProof unsafeSubset
+update = gcoerceWith (unsafeCastKey @s @k) $ coerce $ update' @s @k @a
+
+-- | If a key is present in the map, update its value or delete it using the
+-- given function with a proof that the key was in the map, returning a
+-- potentially smaller map.
+updateWithKey
+  :: forall s k a. Hashable k
+  => (Key s k -> a -> Maybe a)
+  -> k
+  -> HashMap s k a
+  -> SomeHashMapWith (SupersetProof 'Hashed s) k a
+updateWithKey f k (HashMap m) = SomeHashMapWith
+  (HashMap $ HashMap.update (f $ unsafeKey k) k m)
+  $ SupersetProof unsafeSubset
 
 -- | If the given key is in the map, update or delete it using the given
 -- function with a proof that the key was in the map; otherwise the map is
