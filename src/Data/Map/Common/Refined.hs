@@ -110,7 +110,7 @@ data SomeMap k a where
 -- parameter @s@), e.g.:
 --
 -- @
--- 'withMap' ('fromMap' ...) $ \(m :: 'Map' s k a) -> doSomethingWith \@s
+-- 'withMap' ('fromMap' ...) $ \\(m :: 'Map' s k a) -> doSomethingWith \@s
 -- @
 withMap :: forall k a r. SomeMap k a -> (forall s. Map s k a -> r) -> r
 withMap (SomeMap m) k = k m

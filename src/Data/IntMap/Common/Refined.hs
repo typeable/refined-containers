@@ -104,7 +104,8 @@ data SomeIntMap a where
 -- parameter @s@), e.g.:
 --
 -- @
--- 'withIntMap' ('fromIntMap' ...) $ \(m :: 'IntMap' s a) -> doSomethingWith \@s
+-- 'withIntMap' ('fromIntMap' ...)
+--   $ \\(m :: 'IntMap' s a) -> doSomethingWith \@s
 -- @
 withIntMap :: forall a r. SomeIntMap a -> (forall s. IntMap s a -> r) -> r
 withIntMap (SomeIntMap m) k = k m

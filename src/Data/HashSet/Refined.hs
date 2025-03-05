@@ -165,7 +165,7 @@ data SomeHashSet a where
 -- you a way to refer to the set (the parameter @s@), e.g.:
 --
 -- @
--- 'withHashSet' ('fromHashSet' ...) $ \(_ :: 'Proxy' s) -> doSomethingWith \@s
+-- 'withHashSet' ('fromHashSet' ...) $ \\(_ :: 'Proxy' s) -> doSomethingWith \@s
 -- @
 withHashSet
   :: forall a r. SomeHashSet a

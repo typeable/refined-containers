@@ -169,7 +169,7 @@ data SomeIntSet where
 -- you a way to refer to the set (the parameter @s@), e.g.:
 --
 -- @
--- 'withIntSet' ('fromIntSet' ...) $ \(_ :: 'Proxy' s) -> doSomethingWith \@s
+-- 'withIntSet' ('fromIntSet' ...) $ \\(_ :: 'Proxy' s) -> doSomethingWith \@s
 -- @
 withIntSet
   :: forall r. SomeIntSet -> (forall s. KnownIntSet s => Proxy s -> r) -> r

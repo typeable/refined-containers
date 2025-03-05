@@ -96,7 +96,7 @@ data SomeHashMap k a where
 --
 -- @
 -- 'withHashMap' ('fromHashMap' ...
---   $ \(m :: 'HashMap' s k a) -> doSomethingWith \@s
+--   $ \\(m :: 'HashMap' s k a) -> doSomethingWith \@s
 -- @
 withHashMap
   :: forall k a r. SomeHashMap k a -> (forall s. HashMap s k a -> r) -> r

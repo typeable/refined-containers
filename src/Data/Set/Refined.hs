@@ -185,7 +185,7 @@ data SomeSet a where
 -- you a way to refer to the set (the parameter @s@), e.g.:
 --
 -- @
--- 'withSet' ('fromSet' ...) $ \(_ :: 'Proxy' s) -> doSomethingWith \@s
+-- 'withSet' ('fromSet' ...) $ \\(_ :: 'Proxy' s) -> doSomethingWith \@s
 -- @
 withSet
   :: forall a r. SomeSet a -> (forall s. KnownSet s a => Proxy s -> r) -> r
