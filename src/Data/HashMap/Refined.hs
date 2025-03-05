@@ -82,6 +82,7 @@ module Data.HashMap.Refined
   , UnionProof(..)
   , Common.difference
   , DifferenceProof(..)
+  , differenceWith
   , differenceWithKey
   , PartialDifferenceProof(..)
   , intersectionWithKey
@@ -359,8 +360,20 @@ unionWithKey f (HashMap m1) (HashMap m2) = SomeHashMapWith
   (HashMap $ HashMap.unionWithKey (f . reallyUnsafeRefine) m1 m2)
   $ UnionProof unsafeSubset unsafeSubsetWith2
 
--- | For keys that appear in both maps, the given function decides whether the
--- key is removed from the first map.
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
+differenceWith
+  :: forall s t k a b. Hashable k
+  => (a -> b -> Maybe a)
+  -> HashMap s k a
+  -> HashMap t k b
+  -> SomeHashMapWith (PartialDifferenceProof 'Hashed s t) k a
+differenceWith f (HashMap m1) (HashMap m2) = SomeHashMapWith
+  (HashMap $ HashMap.differenceWith f m1 m2)
+  $ PartialDifferenceProof unsafeSubset unsafeSubset
+
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
 --
 -- You can use 'andLeft' and 'andRight' to obtain @'Key' s k@ and @'Key' t k@
 -- respectively.

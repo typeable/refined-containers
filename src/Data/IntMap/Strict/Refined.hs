@@ -77,6 +77,7 @@ module Data.IntMap.Strict.Refined
   , UnionProof(..)
   , Common.difference
   , DifferenceProof(..)
+  , differenceWith
   , differenceWithKey
   , PartialDifferenceProof(..)
   , intersectionWithKey
@@ -375,8 +376,19 @@ unionWithKey f (IntMap m1) (IntMap m2)
   = SomeIntMapWith (IntMap $ IntMap.unionWithKey (f . reallyUnsafeRefine) m1 m2)
     $ UnionProof unsafeSubset unsafeSubsetWith2
 
--- | For keys that appear in both maps, the given function decides whether the
--- key is removed from the first map.
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
+differenceWith
+  :: forall s t a b. (a -> b -> Maybe a)
+  -> IntMap s a
+  -> IntMap t b
+  -> SomeIntMapWith (PartialDifferenceProof 'Int s t) a
+differenceWith f (IntMap m1) (IntMap m2) = SomeIntMapWith
+  (IntMap $ IntMap.differenceWith f m1 m2)
+  $ PartialDifferenceProof unsafeSubset unsafeSubset
+
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
 --
 -- You can use 'andLeft' and 'andRight' to obtain @'Key' s@ and @'Key' t@
 -- respectively.

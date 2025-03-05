@@ -86,6 +86,7 @@ module Data.Map.Refined
   , UnionProof(..)
   , Common.difference
   , DifferenceProof(..)
+  , differenceWith
   , differenceWithKey
   , PartialDifferenceProof(..)
   , intersectionWithKey
@@ -360,8 +361,20 @@ unionWithKey f (Map m1) (Map m2)
   = SomeMapWith (Map $ Map.unionWithKey (f . reallyUnsafeRefine) m1 m2)
     $ UnionProof unsafeSubset unsafeSubsetWith2
 
--- | For keys that appear in both maps, the given function decides whether the
--- key is removed from the first map.
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
+differenceWith
+  :: forall s t k a b. Ord k
+  => (a -> b -> Maybe a)
+  -> Map s k a
+  -> Map t k b
+  -> SomeMapWith (PartialDifferenceProof 'Regular s t) k a
+differenceWith f (Map m1) (Map m2)
+  = SomeMapWith (Map $ Map.differenceWith f m1 m2)
+    $ PartialDifferenceProof unsafeSubset unsafeSubset
+
+-- | Return the first map, but for keys that appear in both maps, the given
+-- function decides whether the key is removed.
 --
 -- You can use 'andLeft' and 'andRight' to obtain @'Key' s k@ and @'Key' t k@
 -- respectively.
