@@ -360,6 +360,29 @@ toDescList = gcoerceWith (unsafeCastKey @s) $ coerce $ IntMap.toDescList @a
 
 -- | Retain only the key-value pairs that satisfy the predicate, returning a
 -- potentially smaller map.
+filter
+  :: forall s a. (a -> Bool)
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+filter p (IntMap m) = SomeIntMapWith (IntMap $ IntMap.filter p m)
+  $ SupersetProof unsafeSubset
+
+-- | Retain only the key-value pairs that satisfy the predicate, returning a
+-- potentially smaller map.
+filterKeys
+  :: forall s a. (Key s -> Bool)
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+filterKeys p (IntMap m) = SomeIntMapWith
+#if MIN_VERSION_containers(0, 8, 0)
+  (IntMap $ IntMap.filterKeys (p . unsafeKey) m)
+#else
+  (IntMap $ IntMap.filterWithKey (\k _ -> p (unsafeKey k)) m)
+#endif
+  $ SupersetProof unsafeSubset
+
+-- | Retain only the key-value pairs that satisfy the predicate, returning a
+-- potentially smaller map.
 filterWithKey
   :: forall s a. (Key s -> a -> Bool)
   -> IntMap s a
@@ -393,6 +416,22 @@ withoutKeys (IntMap m) = SomeIntMapWith
 #endif
   $ DifferenceProof unsafeSubset (\f g -> unsafeSubsetWith2 f g) unsafeSubset
 
+-- | Partition a map into two disjoint submaps: those whose values satisfy the
+-- predicate, and those whose don't.
+partition
+  :: forall s a. (a -> Bool)
+  -> IntMap s a
+  -> Some2IntMapWith (PartitionProof 'Int s Int) a a
+partition p (IntMap m) = case IntMap.partition p m of
+  (m1, m2) -> Some2IntMapWith (IntMap m1) (IntMap m2) $ PartitionProof
+    do \k -> case IntMap.lookup (unrefine k) m of
+        Nothing -> error
+          "partition: bug: Data.IntMap.Refined has been subverted"
+        Just x -> if p x
+          then Left $ unsafeKey $ unrefine k
+          else Right $ unsafeKey $ unrefine k
+    unsafeSubset unsafeSubsetWith2 \f g -> unsafeSubsetWith2 f g
+
 -- | Partition a map into two disjoint submaps: those whose key-value pairs
 -- satisfy the predicate, and those whose don't.
 partitionWithKey
@@ -409,6 +448,43 @@ partitionWithKey p (IntMap m)
             then Left $ unsafeKey $ unrefine k
             else Right $ unsafeKey $ unrefine k
       unsafeSubset unsafeSubsetWith2 \f g -> unsafeSubsetWith2 f g
+
+-- | Take the a submap of keys up to a point where the predicate stops holding.
+--
+-- If @p@ is antitone ( \(\forall x y, x < y \implies p(x) \ge p(y)\) ), then
+-- this point is uniquely defined. If @p@ is not antitone, a splitting point is
+-- chosen in an unspecified way.
+takeWhileAntitone
+  :: forall s a. (Key s -> Bool)
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+takeWhileAntitone p (IntMap m) = SomeIntMapWith
+#if MIN_VERSION_containers(0, 6, 7)
+  (IntMap $ IntMap.takeWhileAntitone (p . unsafeKey) m)
+#else
+  (IntMap $ IntMap.fromDistinctAscList
+    $ List.takeWhile (p . unsafeKey . fst) $ IntMap.toAscList m)
+#endif
+  $ SupersetProof unsafeSubset
+
+-- | Take the a submap of keys starting from a point where the predicate stops
+-- holding.
+--
+-- If @p@ is antitone ( \(\forall x y, x < y \implies p(x) \ge p(y)\) ), then
+-- this point is uniquely defined. If @p@ is not antitone, a splitting point is
+-- chosen in an unspecified way.
+dropWhileAntitone
+  :: forall s a. (Key s -> Bool)
+  -> IntMap s a
+  -> SomeIntMapWith (SupersetProof 'Int s) a
+dropWhileAntitone p (IntMap m) = SomeIntMapWith
+#if MIN_VERSION_containers(0, 6, 7)
+  (IntMap $ IntMap.dropWhileAntitone (p . unsafeKey) m)
+#else
+  (IntMap $ IntMap.fromDistinctAscList
+    $ List.dropWhile (p . unsafeKey . fst) $ IntMap.toAscList m)
+#endif
+  $ SupersetProof unsafeSubset
 
 -- | Divide a map into two disjoint submaps at a point where the predicate on
 -- the keys stops holding.

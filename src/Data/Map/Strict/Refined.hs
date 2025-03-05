@@ -117,12 +117,19 @@ module Data.Map.Strict.Refined
   -- * Filter
   , Common.restrictKeys
   , Common.withoutKeys
+  , Common.filter
+  , Common.filterKeys
   , Common.filterWithKey
+  , Common.partition
   , Common.partitionWithKey
   , PartitionProof(..)
+  , Common.takeWhileAntitone
+  , Common.dropWhileAntitone
   , Common.spanAntitone
   , PartialPartitionProof(..)
+  , mapMaybe
   , mapMaybeWithKey
+  , mapEither
   , mapEitherWithKey
   , Common.splitLookup
   , SplitProof(..)
@@ -521,6 +528,15 @@ mapKeysWith f g (Map m)
       , let !k2 = g $ unsafeKey k1
       ]
 
+-- | Apply a function to all values in a map and collect only the 'Just'
+-- results, returning a potentially smaller map.
+mapMaybe
+  :: forall s k a b. (a -> Maybe b)
+  -> Map s k a
+  -> SomeMapWith (SupersetProof 'Regular s) k b
+mapMaybe f (Map m) = SomeMapWith (Map $ Map.mapMaybe f m)
+  $ SupersetProof unsafeSubset
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, and collect only the 'Just' results, returning a potentially smaller
 -- map.
@@ -531,6 +547,23 @@ mapMaybeWithKey
 mapMaybeWithKey f (Map m)
   = SomeMapWith (Map $ Map.mapMaybeWithKey (f . unsafeKey) m)
     $ SupersetProof unsafeSubset
+
+-- | Apply a function to all values in a map and collect the 'Left' and 'Right'
+-- results into separate (disjoint) maps.
+mapEither
+  :: forall s k a b c. Ord k -- TODO: this is only used in the proof
+  => (a -> Either b c)
+  -> Map s k a
+  -> Some2MapWith (PartitionProof 'Regular s k) k b c
+mapEither p (Map m) = case Map.mapEither p m of
+  (m1, m2) -> Some2MapWith (Map m1) (Map m2) $ PartitionProof
+    do \k -> case Map.lookup (unrefine k) m of
+        Nothing -> error
+          "mapEither: bug: Data.Map.Strict.Refined has been subverted"
+        Just x -> case p x of
+          Left _ -> Left $ unsafeKey $ unrefine k
+          Right _ -> Right $ unsafeKey $ unrefine k
+    unsafeSubset unsafeSubsetWith2 \f g -> unsafeSubsetWith2 f g
 
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, and collect the 'Left' and 'Right' results into separate (disjoint)

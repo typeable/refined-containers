@@ -342,6 +342,25 @@ keysSet (HashMap m) = reify (HashMap.keysSet m)
 toList :: forall s k a. HashMap s k a -> [(Key s k, a)]
 toList = gcoerceWith (unsafeCastKey @s @k) $ coerce $ HashMap.toList @k @a
 
+-- | Retain only the values that satisfy the predicate, returning a potentially
+-- smaller map.
+filter
+  :: forall s k a. (a -> Bool)
+  -> HashMap s k a
+  -> SomeHashMapWith (SupersetProof 'Hashed s) k a
+filter p (HashMap m) = SomeHashMapWith (HashMap $ HashMap.filter p m)
+  $ SupersetProof unsafeSubset
+
+-- | Retain only the keys that satisfy the predicate, returning a potentially
+-- smaller map.
+filterKeys
+  :: forall s k a. (Key s k -> Bool)
+  -> HashMap s k a
+  -> SomeHashMapWith (SupersetProof 'Hashed s) k a
+filterKeys p (HashMap m) = SomeHashMapWith
+  (HashMap $ HashMap.filterWithKey (\k _ -> p (unsafeKey k)) m)
+  $ SupersetProof unsafeSubset
+
 -- | Retain only the key-value pairs that satisfy the predicate, returning a
 -- potentially smaller map.
 filterWithKey
@@ -368,6 +387,25 @@ withoutKeys
 withoutKeys (HashMap m) = SomeHashMapWith
   (HashMap $ HashMap.difference m $ HashSet.toMap $ reflect $ Proxy @t)
   $ DifferenceProof unsafeSubset (\f g -> unsafeSubsetWith2 f g) unsafeSubset
+
+-- | Partition a map into two disjoint submaps: those whose key-value pairs
+-- satisfy the predicate, and those whose don't.
+partition
+  :: forall s k a. Hashable k -- TODO: this is only used in the proof
+  => (a -> Bool)
+  -> HashMap s k a
+  -> Some2HashMapWith (PartitionProof 'Hashed s k) k a a
+partition p (HashMap m) = Some2HashMapWith
+  (HashMap $ HashMap.filter p m)
+  (HashMap $ HashMap.filter (not . p) m)
+  $ PartitionProof
+    do \k -> case HashMap.lookup (unrefine k) m of
+        Nothing -> error
+          "partition: bug: Data.HashMap.Refined has been subverted"
+        Just x -> if p x
+          then Left $ unsafeKey $ unrefine k
+          else Right $ unsafeKey $ unrefine k
+    unsafeSubset unsafeSubsetWith2 \f g -> unsafeSubsetWith2 f g
 
 -- | Partition a map into two disjoint submaps: those whose key-value pairs
 -- satisfy the predicate, and those whose don't.

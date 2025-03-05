@@ -113,10 +113,15 @@ module Data.HashMap.Strict.Refined
   -- * Filter
   , Common.restrictKeys
   , Common.withoutKeys
+  , Common.filter
+  , Common.filterKeys
   , Common.filterWithKey
+  , Common.partition
   , Common.partitionWithKey
   , PartitionProof(..)
+  , mapMaybe
   , mapMaybeWithKey
+  , mapEither
   , mapEitherWithKey
   -- * Casts
   , Common.castKey
@@ -521,6 +526,15 @@ mapKeysWith f g (HashMap m) = SomeHashMapWith
       , let !k2 = g $ unsafeKey k1
       ]
 
+-- | Apply a function to all values in a map and collect only the 'Just'
+-- results, returning a potentially smaller map.
+mapMaybe
+  :: forall s k a b. (a -> Maybe b)
+  -> HashMap s k a
+  -> SomeHashMapWith (SupersetProof 'Hashed s) k b
+mapMaybe f (HashMap m) = SomeHashMapWith (HashMap $ HashMap.mapMaybe f m)
+  $ SupersetProof unsafeSubset
+
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, and collect only the 'Just' results, returning a potentially smaller
 -- map.
@@ -531,6 +545,27 @@ mapMaybeWithKey
 mapMaybeWithKey f (HashMap m)
   = SomeHashMapWith (HashMap $ HashMap.mapMaybeWithKey (f . unsafeKey) m)
     $ SupersetProof unsafeSubset
+
+-- | Apply a function to all values in a map and collect the 'Left' and 'Right'
+-- results into separate (disjoint) maps.
+mapEither
+  :: forall s k a b c. Hashable k -- TODO: this is only used in the proof
+  => (a -> Either b c)
+  -> HashMap s k a
+  -> Some2HashMapWith (PartitionProof 'Hashed s k) k b c
+mapEither p (HashMap m)
+  | m' <- HashMap.map p m
+  = Some2HashMapWith
+    (HashMap $ HashMap.mapMaybe (either Just (const Nothing)) m')
+    (HashMap $ HashMap.mapMaybe (either (const Nothing) Just) m')
+    $ PartitionProof
+      do \k -> case HashMap.lookup (unrefine k) m of
+          Nothing -> error
+            "mapEither: bug: Data.HashMap.Refined has been subverted"
+          Just x -> case p x of
+            Left _ -> Left $ unsafeKey $ unrefine k
+            Right _ -> Right $ unsafeKey $ unrefine k
+      unsafeSubset unsafeSubsetWith2 \f g -> unsafeSubsetWith2 f g
 
 -- | Apply a function to all values in a map, together with their corresponding
 -- keys, and collect the 'Left' and 'Right' results into separate (disjoint)
