@@ -474,7 +474,7 @@ instance TraversableWithIndex (Key s k) (HashMap s k) where
   itraverse = traverseWithKey
 
 -- | Similar to the instance for functions -- zip corresponding keys. To use
--- '<*>'/'Control.Applicative.liftA2' without 'KnownSet' see 'zipWith'.
+-- '<*>'/'Control.Applicative.liftA2' without 'KnownHashSet' see 'zipWith'.
 instance (Hashable k, KnownHashSet s k) => Applicative (HashMap s k) where
   pure x = fromSet \_ -> x
   (<*>) = zipWith id
@@ -486,8 +486,8 @@ bind
   => HashMap s k a -> (a -> HashMap s k b) -> HashMap s k b
 bind m f = mapWithKey (\k x -> f x ! k) m
 
--- | Similar to the instance for functions. To use '>>=' without 'KnownSet' see
--- 'bind'.
+-- | Similar to the instance for functions. To use '>>=' without 'KnownHashSet'
+-- see 'bind'.
 instance (Hashable k, KnownHashSet s k) => Monad (HashMap s k) where
   (>>=) = bind
 

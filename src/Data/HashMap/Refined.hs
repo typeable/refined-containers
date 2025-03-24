@@ -344,7 +344,8 @@ updateLookupWithKey f k (HashMap m) =
   )
 
 -- | Given two maps proven to have the same keys, for each key apply the
--- function to the associated values, to obtain a new map with the same keys.
+-- function to the associated values and the key, to obtain a new map with the
+-- same keys.
 zipWithKey
   :: forall s k a b c. Hashable k
   => (Key s k -> a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
