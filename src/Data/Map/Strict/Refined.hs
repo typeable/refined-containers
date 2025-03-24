@@ -78,6 +78,7 @@ module Data.Map.Strict.Refined
   , Common.disjoint
   , DisjointProof(..)
   -- * Combine
+  , zipWith
   , zipWithKey
   , bind
   , Common.union
@@ -160,7 +161,7 @@ import           Data.Proxy
 import           Data.Reflection
 import           Data.Traversable
 import           Data.Type.Coercion
-import           Prelude hiding (lookup, map, null)
+import           Prelude hiding (lookup, map, null, zipWith)
 import           Refined
 import           Refined.Unsafe
 
@@ -355,6 +356,24 @@ updateLookupWithKey f k (Map m)
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
+zipWith
+  :: forall s k a b c. Ord k
+  => (a -> b -> c) -> Map s k a -> Map s k b -> Map s k c
+zipWith f (Map m1) (Map m2) = Map
+  $ Map.mergeWithKey (\_ x y -> Just $ f x y)
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWith: bug: Data.Map.Strict.Refined has been subverted")
+    (\m -> if Map.null m
+      then Map.empty
+      else error "zipWith: bug: Data.Map.Strict.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
+    m1
+    m2
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values and the key, to obtain a new map with the
+-- same keys.
 zipWithKey
   :: forall s k a b c. Ord k
   => (Key s k -> a -> b -> c) -> Map s k a -> Map s k b -> Map s k c

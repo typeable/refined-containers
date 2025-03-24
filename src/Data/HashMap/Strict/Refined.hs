@@ -137,7 +137,7 @@ import           Data.Functor
 import qualified Data.HashMap.Strict as HashMap
 import           Data.HashMap.Common.Refined
   ( HashMap(..), Key, unsafeCastKey, unsafeKey, SomeHashMapWith(..)
-  , Some2HashMapWith(..), (!), zipWith
+  , Some2HashMapWith(..), (!)
   )
 import qualified Data.HashMap.Common.Refined as Common
 import qualified Data.HashSet as HashSet
@@ -353,6 +353,14 @@ updateLookupWithKey f k (HashMap m) =
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
+zipWith
+  :: forall s k a b c. Hashable k
+  => (a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c
+zipWith f (HashMap m1) (HashMap m2) = HashMap $ HashMap.intersectionWith f m1 m2
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values and the key, to obtain a new map with the
+-- same keys.
 zipWithKey
   :: forall s k a b c. Hashable k
   => (Key s k -> a -> b -> c) -> HashMap s k a -> HashMap s k b -> HashMap s k c

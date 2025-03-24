@@ -145,7 +145,7 @@ import           Data.Functor
 import qualified Data.IntMap.Strict as IntMap
 import           Data.IntMap.Common.Refined
   ( IntMap(..), Key, unsafeCastKey, unsafeKey, SomeIntMapWith(..)
-  , Some2IntMapWith(..), (!), zipWith
+  , Some2IntMapWith(..), (!)
   )
 import qualified Data.IntMap.Common.Refined as Common
 import           Data.Proxy
@@ -344,6 +344,28 @@ updateLookupWithKey f k (IntMap m)
 
 -- | Given two maps proven to have the same keys, for each key apply the
 -- function to the associated values, to obtain a new map with the same keys.
+zipWith
+  :: forall s a b c. (a -> b -> c)
+  -> IntMap s a
+  -> IntMap s b
+  -> IntMap s c
+zipWith f (IntMap m1) (IntMap m2) = IntMap
+  $ IntMap.mergeWithKey (\_ x y -> Just $ f x y)
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else
+        error "zipWith: bug: Data.IntMap.Strict.Refined has been subverted")
+    (\m -> if IntMap.null m
+      then IntMap.empty
+      else
+        error "zipWith: bug: Data.IntMap.Strict.Refined has been subverted")
+    --  ^ Work around https://github.com/haskell/containers/issues/979
+    m1
+    m2
+
+-- | Given two maps proven to have the same keys, for each key apply the
+-- function to the associated values and the key, to obtain a new map with the
+-- same keys.
 zipWithKey
   :: forall s a b c. (Key s -> a -> b -> c)
   -> IntMap s a
